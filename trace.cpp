@@ -9,6 +9,7 @@
 #include <klee/Expr/ExprUtil.h>
 
 #include "fns.h"
+#include "query_info.hpp"
 
 using namespace clover;
 
@@ -112,7 +113,20 @@ Trace::findNewPath(void)
 			return std::nullopt; /* all branches exhausted */
 
 		auto query = newQuery(cs, path);
+		auto start = std::chrono::high_resolution_clock::now();
 		assign = solver.getAssignment(query);
+		auto end = std::chrono::high_resolution_clock::now();
+		std::chrono::duration<float> solving_time = end - start;
+
+		Branch_Info &branch_info = info_on_branches[path.back().first->addr];
+		branch_info.address = path.back().first->addr;
+		branch_info.num_queries++;
+		branch_info.query_solving_times_in_seconds.push_back(solving_time.count());
+		branch_info.num_constraints.push_back(get_number_of_constraints(query));
+		branch_info.num_variables.push_back(get_number_of_variables(query));
+		branch_info.num_nodes.push_back(get_query_size(query));
+		branch_info.depth.push_back(get_query_depth(query));
+
 	} while (!assign.has_value()); /* loop until we found a sat assignment */
 
 	assert(assign.has_value());
