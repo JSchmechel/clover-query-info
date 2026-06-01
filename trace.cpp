@@ -8,8 +8,8 @@
 #include <klee/Expr/Constraints.h>
 #include <klee/Expr/ExprUtil.h>
 
+#include "clover/query_info.hpp"
 #include "fns.h"
-#include "query_info.hpp"
 
 using namespace clover;
 
