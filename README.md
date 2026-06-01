@@ -1,3 +1,12 @@
+# Fork Info
+
+The current fork is a minor extension to clover. For debugging/optimization purposes we store information on the solved
+queries (location, solving time, syntactic complexity) in a global data structure. This information is never processed
+by Clover itself. Instead projects that embedd this fork of clover can use it for statistical evaluations. One example
+for such a project is SymEx-Trace-VP [https://github.com/agra-uni-bremen/symex-trace-vp].
+
+The rest of this readme contains the readme of the unedited clover version. 
+
 # clover
 
 A library for concolic execution of RV32 instruction set simulators.
