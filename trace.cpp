@@ -10,6 +10,7 @@
 
 #include "clover/query_info.hpp"
 #include "fns.h"
+#include "clover/query_info.hpp"
 
 using namespace clover;
 
@@ -126,7 +127,6 @@ Trace::findNewPath(void)
 		branch_info.num_variables.push_back(get_number_of_variables(query));
 		branch_info.num_nodes.push_back(get_query_size(query));
 		branch_info.depth.push_back(get_query_depth(query));
-
 	} while (!assign.has_value()); /* loop until we found a sat assignment */
 
 	assert(assign.has_value());
