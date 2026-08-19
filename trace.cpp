@@ -45,7 +45,8 @@ Trace::reset(void)
 }
 
 void
-Trace::add(bool condition, std::shared_ptr<BitVector> bv, uint32_t pc)
+Trace::add(bool condition, std::shared_ptr<BitVector> bv, uint32_t pc,
+           uint32_t run_id, uint64_t step)
 {
 	auto c = (condition) ? bv->eqTrue() : bv->eqFalse();
 
@@ -57,8 +58,11 @@ Trace::add(bool condition, std::shared_ptr<BitVector> bv, uint32_t pc)
 	}
 
 	assert(node);
+	// Only the run that first reaches this prefix creates the node, so run_id/step end up naming
+	// that first execution. Every later run replaying the shared prefix arrives here with the node
+	// already populated and leaves it alone - which is what makes the stamped occurrence stable.
 	if (node->isPlaceholder())
-		node->value = std::make_shared<Branch>(bv, false, pc);
+		node->value = std::make_shared<Branch>(bv, false, pc, run_id, step);
 
 	if (condition) {
 		if (!node->true_branch)
@@ -118,15 +122,19 @@ Trace::findNewPath(void)
 		auto end = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<float> solving_time = end - start;
 
-		// Storing statistics.
-		Branch_Info &branch_info = info_on_branches[path.back().first->addr];
-		branch_info.address = path.back().first->addr;
-		branch_info.num_queries++;
-		branch_info.query_solving_times_in_seconds.push_back(solving_time.count());
-		branch_info.num_constraints.push_back(get_number_of_constraints(query));
-		branch_info.num_variables.push_back(get_number_of_variables(query));
-		branch_info.num_nodes.push_back(get_query_size(query));
-		branch_info.depth.push_back(get_query_depth(query));
+		// Storing statistics. The negated branch is the last element of the path, and it carries
+		// the (run, step) of the execution that created its node - which is what ties this query
+		// to a specific event rather than merely to an address.
+		auto &branch = *path.back().first;
+		info_on_branches[branch.addr].queries.push_back(Query_Info{
+		    branch.run_id,
+		    branch.step,
+		    solving_time.count(),
+		    get_number_of_constraints(query),
+		    get_number_of_variables(query),
+		    get_query_size(query),
+		    get_query_depth(query),
+		});
 	} while (!assign.has_value()); /* loop until we found a sat assignment */
 
 	assert(assign.has_value());

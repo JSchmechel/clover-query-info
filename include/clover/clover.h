@@ -162,8 +162,23 @@ private:
 		// branch condition represented by the BitVector.
 		uint32_t addr;
 
-		Branch(std::shared_ptr<BitVector> _bv, bool _wasNegated, uint32_t _addr)
-		    : bv(_bv), wasNegated(_wasNegated), addr(_addr)
+		// Which execution of that branch instruction this node
+		// came from, as (run, step). Stamped once, when the node
+		// is created - later runs re-traverse an existing node
+		// without touching it - so this is the run that FIRST
+		// reached this path prefix, not any later one that
+		// replays it, and not the run a query on this node may
+		// go on to create.
+		//
+		// step is the ISS's total_num_instr, which restarts at
+		// zero each run, so it only identifies an occurrence
+		// when paired with run_id.
+		uint32_t run_id;
+		uint64_t step;
+
+		Branch(std::shared_ptr<BitVector> _bv, bool _wasNegated, uint32_t _addr,
+		       uint32_t _run_id, uint64_t _step)
+		    : bv(_bv), wasNegated(_wasNegated), addr(_addr), run_id(_run_id), step(_step)
 		{
 			return;
 		}
@@ -210,8 +225,11 @@ public:
 	~Trace(void);
 	void reset(void);
 
-	/* Add bv as constraint to ConstraintSet and as node in tree. */
-	void add(bool condition, std::shared_ptr<BitVector> bv, uint32_t pc);
+	/* Add bv as constraint to ConstraintSet and as node in tree.
+	 * run_id/step identify the executing branch occurrence and are
+	 * recorded only when this call creates the node. */
+	void add(bool condition, std::shared_ptr<BitVector> bv, uint32_t pc,
+	         uint32_t run_id, uint64_t step);
 
 	std::optional<klee::Assignment> findNewPath(void);
 	ConcreteStore getStore(const klee::Assignment &assign);
