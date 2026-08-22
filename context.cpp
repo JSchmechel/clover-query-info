@@ -33,9 +33,9 @@ ExecutionContext::setupNewValues(ConcreteStore store)
 }
 
 bool
-ExecutionContext::setupNewValues(Trace &trace)
+ExecutionContext::setupNewValues(Trace &trace, uint32_t current_run)
 {
-	auto assign = trace.findNewPath();
+	auto assign = trace.findNewPath(current_run);
 	if (!assign.has_value())
 		return false;
 

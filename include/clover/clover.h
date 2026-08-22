@@ -231,7 +231,12 @@ public:
 	void add(bool condition, std::shared_ptr<BitVector> bv, uint32_t pc,
 	         uint32_t run_id, uint64_t step);
 
-	std::optional<klee::Assignment> findNewPath(void);
+	/* current_run is the run the exploration loop has just finished: it is
+	 * stamped on every query issued here as issued_in_run, recording which
+	 * gap paid for the query rather than which branch it is about. Passed in
+	 * rather than read from a global, so clover stays independent of the VP -
+	 * the same reason add() takes run_id/step. */
+	std::optional<klee::Assignment> findNewPath(uint32_t current_run);
 	ConcreteStore getStore(const klee::Assignment &assign);
 };
 
@@ -268,7 +273,7 @@ public:
 	ConcreteStore getPrevStore(void);
 
 	bool setupNewValues(ConcreteStore store);
-	bool setupNewValues(Trace &trace);
+	bool setupNewValues(Trace &trace, uint32_t current_run);
 
 	std::shared_ptr<ConcolicValue> getSymbolicWord(std::string name);
 	std::shared_ptr<ConcolicValue> getSymbolicBytes(std::string name, size_t size);

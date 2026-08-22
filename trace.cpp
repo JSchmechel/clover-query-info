@@ -105,7 +105,7 @@ Trace::newQuery(klee::ConstraintSet &cs, Path &path)
 }
 
 std::optional<klee::Assignment>
-Trace::findNewPath(void)
+Trace::findNewPath(uint32_t current_run)
 {
 	std::optional<klee::Assignment> assign;
 
@@ -129,6 +129,12 @@ Trace::findNewPath(void)
 		info_on_branches[branch.addr].queries.push_back(Query_Info{
 		    branch.run_id,
 		    branch.step,
+		    // Where the cost was PAID, as opposed to which branch it was about. This loop runs
+		    // until a query comes back satisfiable, so every iteration but the last is time spent
+		    // proving some branch infeasible - and every one of them is charged to this same gap
+		    // even though the branches were discovered in unrelated, earlier runs.
+		    current_run,
+		    assign.has_value(),
 		    solving_time.count(),
 		    get_number_of_constraints(query),
 		    get_number_of_variables(query),

@@ -37,6 +37,31 @@ struct Query_Info {
 	uint32_t run_id;
 	uint64_t step;
 
+	/**
+	 * The run the exploration loop had just finished when this query was issued - i.e. WHICH GAP
+	 * PAID FOR IT.
+	 *
+	 * NOT a duplicate of run_id above, and must not be merged with it. run_id says which branch
+	 * occurrence the query is ABOUT; this says when the cost was incurred. They coincide only for a
+	 * query that negates a branch discovered by the run that just ended and succeeds immediately.
+	 * findNewPath keeps querying until it gets a satisfiable assignment, so one gap routinely pays
+	 * for several queries about branches discovered in several different, much earlier runs.
+	 *
+	 * Without this the per-query seconds cannot be placed on a timeline at all: the trace records
+	 * what every query cost and nothing about when it was spent.
+	 */
+	uint32_t issued_in_run;
+
+	/**
+	 * Whether the solver returned an assignment. False means this query proved a branch infeasible:
+	 * real wall-clock time that produced no new path.
+	 *
+	 * Exactly one query per gap is satisfiable - the one that ends findNewPath's loop and creates
+	 * the next run - except in the final gap, which exhausts the tree and has none. Everything else
+	 * is search overhead, and separating it out is the whole point of recording this.
+	 */
+	bool sat;
+
 	float seconds;
 	unsigned int constraints;
 	unsigned int variables;
